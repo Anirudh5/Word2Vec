@@ -1,5 +1,17 @@
 import re
 import argparse
+from nltk.corpus import stopwords
+from nltk.tokenize import sent_tokenize
+
+def process_article(data):
+    data = re.sub(r"\'", "", data)
+    data = sent_tokenize(data)
+    for i, sent in enumerate(data):
+        s = re.sub(r"[^a-z]+", " ", sent).split()
+        s = [w for w in s if w not in stop]
+        data[i] = " ".join(s)
+    data = "\n".join(data)
+    return data + "\n"
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -7,10 +19,10 @@ if __name__ == '__main__':
     parser.add_argument("-o", "--output", type=str, help="Output file")
     args = parser.parse_args()
 
-    data = open(args.input, "r").read()
-    data = data.lower()
-    data = re.sub(r"\W+", " ", data)
-    data = " ".join(data.split())
-    output = open(args.output, "a")
-    output.write(data)
+    stop = set(stopwords.words('english'))
+    output = open(args.output, "w")
+    data = open(args.input, "r").read().lower().split('\n')
+    for article in data:
+        if article:
+            output.write(process_article(article))
     output.close()
