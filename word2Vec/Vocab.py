@@ -98,3 +98,60 @@ class Vocab:
 
     def indices(self, tokens):
         return [self.vocab_hash[token] if token in self else self.vocab_hash['<unk>'] for token in tokens]
+
+    def encode_huffman(self):
+        # Build a Huffman tree
+        vocab_size = len(self)
+        count = [t.count for t in self] + [1e15] * (vocab_size - 1)
+        parent = [0] * (2 * vocab_size - 2)
+        binary = [0] * (2 * vocab_size - 2)
+        
+        pos1 = vocab_size - 1
+        pos2 = vocab_size
+
+        for i in xrange(vocab_size - 1):
+            # Find min1
+            if pos1 >= 0:
+                if count[pos1] < count[pos2]:
+                    min1 = pos1
+                    pos1 -= 1
+                else:
+                    min1 = pos2
+                    pos2 += 1
+            else:
+                min1 = pos2
+                pos2 += 1
+
+            # Find min2
+            if pos1 >= 0:
+                if count[pos1] < count[pos2]:
+                    min2 = pos1
+                    pos1 -= 1
+                else:
+                    min2 = pos2
+                    pos2 += 1
+            else:
+                min2 = pos2
+                pos2 += 1
+
+            count[vocab_size + i] = count[min1] + count[min2]
+            parent[min1] = vocab_size + i
+            parent[min2] = vocab_size + i
+            binary[min2] = 1
+
+        # Assign binary code and path pointers to each vocab word
+        root_idx = 2 * vocab_size - 2
+        for i, token in enumerate(self):
+            path = [] # List of indices from the leaf to the root
+            code = [] # Binary Huffman encoding from the leaf to the root
+
+            node_idx = i
+            while node_idx < root_idx:
+                if node_idx >= vocab_size: path.append(node_idx)
+                code.append(binary[node_idx])
+                node_idx = parent[node_idx]
+            path.append(root_idx)
+
+            # These are path and code from the root to the leaf
+            token.path = [j - vocab_size for j in path[::-1]]
+            token.code = code[::-1]
