@@ -143,3 +143,50 @@ def __init_process(*args):
         warnings.simplefilter('ignore', RuntimeWarning)
         syn0 = np.ctypeslib.as_array(syn0_tmp)
         syn1 = np.ctypeslib.as_array(syn1_tmp)
+
+def train(fi, fo, cbow, neg, dim, alpha, win, min_count, num_processes, binary):
+    # Read train file to init vocab
+    vocab = Vocab(fi , min_count)
+
+    # Init net
+    syn0, syn1 = init_net(dim, len(vocab))
+
+    global_word_count = Value('i', 0)
+    table = None
+    if neg > 0:
+        print 'Initializing unigram table'
+        table = UnigramTable(vocab)
+    else:
+        print 'Initializing Huffman tree'
+        vocab.encode_huffman()
+
+    # Begin training using num_processes workers
+    t0 = time.time()
+    pool = Pool(processes=num_processes, initializer=__init_process,
+                initargs=(vocab, syn0, syn1, table, cbow, neg, dim, alpha,
+                          win, num_processes, global_word_count, fi))
+    pool.map(train_process, range(num_processes))
+    t1 = time.time()
+    print
+    print 'Completed training. Training took', (t1 - t0) / 60, 'minutes'
+
+    # Save model to file
+    save(vocab, syn0, fo, binary)
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-train', help='Training file', dest='fi', required=True)
+    parser.add_argument('-model', help='Output model file', dest='fo', required=True)
+    parser.add_argument('-cbow', help='1 for CBOW, 0 for skip-gram', dest='cbow', default=1, type=int)
+    parser.add_argument('-negative', help='Number of negative examples (>0) for negative sampling, 0 for hierarchical softmax', dest='neg', default=5, type=int)
+    parser.add_argument('-dim', help='Dimensionality of word embeddings', dest='dim', default=100, type=int)
+    parser.add_argument('-alpha', help='Starting alpha', dest='alpha', default=0.025, type=float)
+    parser.add_argument('-window', help='Max window length', dest='win', default=5, type=int) 
+    parser.add_argument('-min-count', help='Min count for words used to learn <unk>', dest='min_count', default=5, type=int)
+    parser.add_argument('-processes', help='Number of processes', dest='num_processes', default=1, type=int)
+    parser.add_argument('-binary', help='1 for output model in binary format, 0 otherwise', dest='binary', default=0, type=int)
+    #TO DO: parser.add_argument('-epoch', help='Number of training epochs', dest='epoch', default=1, type=int)
+    args = parser.parse_args()
+
+    train(args.fi, args.fo, bool(args.cbow), args.neg, args.dim, args.alpha, args.win,
+          args.min_count, args.num_processes, bool(args.binary))
