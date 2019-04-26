@@ -29,11 +29,11 @@ class Vocab:
                 if token not in vocab_hash:
                     vocab_hash[token] = len(vocab_items)
                     vocab_items.append(VocabItem(token))
-                    
+
                 #assert vocab_items[vocab_hash[token]].word == token, 'Wrong vocab_hash index'
                 vocab_items[vocab_hash[token]].count += 1
                 word_count += 1
-            
+
                 if word_count % 10000 == 0:
                     sys.stdout.write("\rReading word %d" % word_count)
                     sys.stdout.flush()
@@ -54,9 +54,9 @@ class Vocab:
         self.__sort(min_count)
 
         #assert self.word_count == sum([t.count for t in self.vocab_items]), 'word_count and sum of t.count do not agree'
-        print 'Total words in training file: %d' % self.word_count
-        print 'Total bytes in training file: %d' % self.bytes
-        print 'Vocab size: %d' % len(self)
+        print('Total words in training file: %d' % self.word_count)
+        print('Total bytes in training file: %d' % self.bytes)
+        print('Vocab size: %d' % len(self))
 
     def __getitem__(self, i):
         return self.vocab_items[i]
@@ -74,7 +74,7 @@ class Vocab:
         tmp = []
         tmp.append(VocabItem('<unk>'))
         unk_hash = 0
-        
+
         count_unk = 0
         for token in self.vocab_items:
             if token.count < min_count:
@@ -93,8 +93,7 @@ class Vocab:
         self.vocab_items = tmp
         self.vocab_hash = vocab_hash
 
-        print
-        print 'Unknown vocab size:', count_unk
+        print('\nUnknown vocab size:', count_unk)
 
     def indices(self, tokens):
         return [self.vocab_hash[token] if token in self else self.vocab_hash['<unk>'] for token in tokens]
@@ -105,7 +104,7 @@ class Vocab:
         count = [t.count for t in self] + [1e15] * (vocab_size - 1)
         parent = [0] * (2 * vocab_size - 2)
         binary = [0] * (2 * vocab_size - 2)
-        
+
         pos1 = vocab_size - 1
         pos2 = vocab_size
 

@@ -1,5 +1,5 @@
 def save(vocab, syn0, fo, binary):
-    print 'Saving model to', fo
+    print('Saving model to', fo)
     dim = len(syn0[0])
     if binary:
         fo = open(fo, 'wb')

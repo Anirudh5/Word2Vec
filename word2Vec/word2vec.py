@@ -43,7 +43,6 @@ def train_process(pid):
     #print 'Worker %d beginning training at %d, ending at %d' % (pid, start, end)
 
     alpha = starting_alpha
-
     word_count = 0
     last_word_count = 0
 
@@ -136,7 +135,6 @@ def train_process(pid):
 def __init_process(*args):
     global vocab, syn0, syn1, table, cbow, neg, dim, starting_alpha
     global win, num_processes, global_word_count, fi
-    
     vocab, syn0_tmp, syn1_tmp, table, cbow, neg, dim, starting_alpha, win, num_processes, global_word_count = args[:-1]
     fi = open(args[-1], 'r')
     with warnings.catch_warnings():
@@ -144,31 +142,33 @@ def __init_process(*args):
         syn0 = np.ctypeslib.as_array(syn0_tmp)
         syn1 = np.ctypeslib.as_array(syn1_tmp)
 
-def train(fi, fo, cbow, neg, dim, alpha, win, min_count, num_processes, binary):
+def train(fi, fo, cbow, neg, dim, alpha, win, min_count, num_processes, binary, epochs):
     # Read train file to init vocab
     vocab = Vocab(fi , min_count)
 
     # Init net
     syn0, syn1 = init_net(dim, len(vocab))
 
-    global_word_count = Value('i', 0)
     table = None
     if neg > 0:
-        print 'Initializing unigram table'
+        print('Initializing unigram table')
         table = UnigramTable(vocab)
     else:
-        print 'Initializing Huffman tree'
+        print('Initializing Huffman tree')
         vocab.encode_huffman()
 
     # Begin training using num_processes workers
     t0 = time.time()
-    pool = Pool(processes=num_processes, initializer=__init_process,
-                initargs=(vocab, syn0, syn1, table, cbow, neg, dim, alpha,
-                          win, num_processes, global_word_count, fi))
-    pool.map(train_process, range(num_processes))
+    for epoch in range(epochs):
+        global_word_count = Value('i', 0)
+        print('\nEpoch', epoch + 1)
+        pool = Pool(processes=num_processes, initializer=__init_process,
+                    initargs=(vocab, syn0, syn1, table, cbow, neg, dim, alpha,
+                              win, num_processes, global_word_count, epochs, fi))
+        pool.map(train_process, range(num_processes))
+
     t1 = time.time()
-    print
-    print 'Completed training. Training took', (t1 - t0) / 60, 'minutes'
+    print('\nCompleted training. Training took', (t1 - t0) / 60, 'minutes')
 
     # Save model to file
     save(vocab, syn0, fo, binary)
@@ -181,12 +181,12 @@ if __name__ == '__main__':
     parser.add_argument('-negative', help='Number of negative examples (>0) for negative sampling, 0 for hierarchical softmax', dest='neg', default=5, type=int)
     parser.add_argument('-dim', help='Dimensionality of word embeddings', dest='dim', default=100, type=int)
     parser.add_argument('-alpha', help='Starting alpha', dest='alpha', default=0.025, type=float)
-    parser.add_argument('-window', help='Max window length', dest='win', default=5, type=int) 
+    parser.add_argument('-window', help='Max window length', dest='win', default=5, type=int)
     parser.add_argument('-min-count', help='Min count for words used to learn <unk>', dest='min_count', default=5, type=int)
     parser.add_argument('-processes', help='Number of processes', dest='num_processes', default=1, type=int)
     parser.add_argument('-binary', help='1 for output model in binary format, 0 otherwise', dest='binary', default=0, type=int)
-    #TO DO: parser.add_argument('-epoch', help='Number of training epochs', dest='epoch', default=1, type=int)
+    parser.add_argument('-epochs', help='Number of training epochs', dest='epochs', default=10, type=int)
     args = parser.parse_args()
 
     train(args.fi, args.fo, bool(args.cbow), args.neg, args.dim, args.alpha, args.win,
-          args.min_count, args.num_processes, bool(args.binary))
+          args.min_count, args.num_processes, bool(args.binary), args.epochs)

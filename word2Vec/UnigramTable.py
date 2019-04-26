@@ -22,7 +22,7 @@ class UnigramTable:
         table_size = 100000000 # Length of the unigram table
         table = np.zeros(table_size, dtype=np.uint32)
 
-        print 'Filling unigram table'
+        print('Filling unigram table')
         p = 0 # Cumulative probability
         i = 0
         for j, unigram in enumerate(vocab):

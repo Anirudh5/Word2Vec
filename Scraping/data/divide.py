@@ -13,4 +13,4 @@ for i in range(1,16):
 	f1 = open("naturedata"+str(i)+".txt",'w')
 	f1.write(data)
 	f1.close()
-	print i
+	print(i)
