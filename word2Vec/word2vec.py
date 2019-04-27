@@ -164,11 +164,11 @@ def train(fi, fo, cbow, neg, dim, alpha, win, min_count, num_processes, binary, 
         print('\nEpoch', epoch + 1)
         pool = Pool(processes=num_processes, initializer=__init_process,
                     initargs=(vocab, syn0, syn1, table, cbow, neg, dim, alpha,
-                              win, num_processes, global_word_count, epochs, fi))
+                              win, num_processes, global_word_count, fi))
         pool.map(train_process, range(num_processes))
 
     t1 = time.time()
-    print('\nCompleted training. Training took', (t1 - t0) / 60, 'minutes')
+    print('\nCompleted training. Training took', int((t1 - t0) / 60), 'minutes')
 
     # Save model to file
     save(vocab, syn0, fo, binary)

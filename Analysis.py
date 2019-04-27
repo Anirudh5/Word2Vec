@@ -27,18 +27,14 @@ def closest_words(word, vectors):
 def most_similar_words(a, b, c, vectors):
     similarity = {}
     if a not in vectors or b not in vectors or c not in vectors: return "One or more words do not exist in the vocabulary."
-    vec = vectors[a] + vectors[b] - vectors[c]
+    vec = vectors[a] - vectors[b] + vectors[c]
     for w in vectors: similarity[w] = cosine(vec, vectors[w])
     return [word for word in nsmallest(5, similarity, key=similarity.get)]
 
-def separate_vocab_vectors(vec, vocab_size, vec_dim):
-    vocab = []
-    vectors = np.zeros((vocab_size, vec_dim))
-    for i, p in enumerate(vec.items()):
-        token, vector = p
-        vocab.append(token)
-        vectors[i] = vector
-    return vocab, vectors
+def get_vectors(vec, vec_dim, words):
+    vectors = np.zeros((len(words), vec_dim))
+    for i, word in enumerate(words): vectors[i] = vec[word]
+    return vectors
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -46,10 +42,12 @@ if __name__ == '__main__':
     parser.add_argument("-ev", "--eng_vec", type=str, help="English vectors file")
     args = parser.parse_args()
 
+    print("Loading medical domain vectors")
     med_vec, med_vocab_size, med_vec_dim = read_vectors(args.med_vec)
+    print("Loading plain english vectors")
     eng_vec, eng_vocab_size, eng_vec_dim = read_vectors(args.eng_vec)
 
-    print("1. Closest words -> single word\n2. Most similar words -> three words (a + b - c)\n3. TSNE visualisation\n9. Exit\n")
+    print("\n1. Closest words -> single word\n2. Most similar words -> three words (a - b + c)\n3. TSNE visualisation\n9. Exit\n")
     while True:
         query = input("Query Type > ")
         if query == "1":
@@ -59,18 +57,18 @@ if __name__ == '__main__':
             print("From english domain")
             print(closest_words(word, eng_vec))
         elif query == "2":
-            words = input("Words > ")
-            a, b, c = words.split()
+            a, b, c = input("Words > ").split()
             print("From medical domain")
             print(most_similar_words(a, b, c, med_vec))
             print("From english domain")
             print(most_similar_words(a, b, c, eng_vec))
         elif query == "3":
+            words = input("Words > ").split()
+            vectors = get_vectors(med_vec, med_vec_dim, words)
             tsne = TSNE(n_components=2, random_state=0)
-            vocab, vectors = separate_vocab_vectors(med_vec, med_vocab_size, med_vec_dim)
             Y = tsne.fit_transform(vectors)
             plt.scatter(Y[:, 0], Y[:, 1])
-            for label, x, y in zip(vocab, Y[:, 0], Y[:, 1]):
+            for label, x, y in zip(words, Y[:, 0], Y[:, 1]):
                 plt.annotate(label, xy=(x, y), xytext=(0, 0), textcoords='offset points')
             plt.show()
         else:

@@ -4,11 +4,11 @@ from nltk.corpus import stopwords
 from nltk.tokenize import sent_tokenize
 
 def process_article(data):
-    data = re.sub(r"\'", "", data)
+    data = re.sub(r"\'s", "", data)
     data = sent_tokenize(data)
     for i, sent in enumerate(data):
         s = re.sub(r"[^a-z]+", " ", sent).split()
-        s = [w for w in s if w not in stop]
+        s = [w for w in s if w not in stop and not len(w) < 3]
         data[i] = " ".join(s)
     data = "\n".join(data)
     return data + "\n"
