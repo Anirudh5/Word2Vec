@@ -36,6 +36,15 @@ def get_vectors(vec, vec_dim, words):
     for i, word in enumerate(words): vectors[i] = vec[word]
     return vectors
 
+def tsne(med_vec, eng_vec_dim, words):
+    vectors = get_vectors(med_vec, med_vec_dim, words)
+    tsne = TSNE(n_components=2, random_state=0)
+    Y = tsne.fit_transform(vectors)
+    plt.scatter(Y[:, 0], Y[:, 1])
+    for label, x, y in zip(words, Y[:, 0], Y[:, 1]):
+        plt.annotate(label, xy=(x, y), xytext=(0, 0), textcoords='offset points')
+    plt.show()
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-mv", "--med_vec", type=str, help="Medical vectors file")
@@ -64,12 +73,7 @@ if __name__ == '__main__':
             print(most_similar_words(a, b, c, eng_vec))
         elif query == "3":
             words = input("Words > ").split()
-            vectors = get_vectors(med_vec, med_vec_dim, words)
-            tsne = TSNE(n_components=2, random_state=0)
-            Y = tsne.fit_transform(vectors)
-            plt.scatter(Y[:, 0], Y[:, 1])
-            for label, x, y in zip(words, Y[:, 0], Y[:, 1]):
-                plt.annotate(label, xy=(x, y), xytext=(0, 0), textcoords='offset points')
-            plt.show()
+            tsne(med_vec, med_vec_dim, words)
+            tsne(eng_vec, eng_vec_dim, words)
         else:
             quit()
